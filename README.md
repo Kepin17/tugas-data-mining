@@ -34,13 +34,14 @@ python3 -m venv .venv
 .venv/bin/python ml/train.py
 ```
 
-### 3. Jalankan backend (port 8000)
+### 3. Jalankan backend (port 8005)
 
 ```bash
-.venv/bin/uvicorn backend.app:app --reload --port 8000
+.venv/bin/python backend/app.py
+# atau: .venv/bin/uvicorn backend.app:app --reload --port 8005
 ```
 
-### 4. Jalankan frontend (port 5173)
+### 4. Jalankan frontend (port 3003)
 
 ```bash
 cd frontend
@@ -48,21 +49,21 @@ npm install
 npm run dev
 ```
 
-Buka http://localhost:5173. Request `/api/*` dari frontend otomatis di-proxy ke backend (lihat `frontend/vite.config.js`).
+Buka http://localhost:3003. Request `/api/*` dari frontend otomatis di-proxy ke backend (lihat `frontend/vite.config.js`).
 
 ## Endpoint API
 
-| Method | Path | Keterangan |
-|---|---|---|
-| GET | `/` | Health check |
-| GET | `/metadata` | Fitur, nilai valid, metrik evaluasi |
-| GET | `/tree` | Aturan pohon keputusan (teks) |
-| POST | `/predict` | Prediksi dari `{ipk, penghasilan, ikut_organisasi, ikut_ukm}` |
+| Method | Path        | Keterangan                                                    |
+| ------ | ----------- | ------------------------------------------------------------- |
+| GET    | `/`         | Health check                                                  |
+| GET    | `/metadata` | Fitur, nilai valid, metrik evaluasi                           |
+| GET    | `/tree`     | Aturan pohon keputusan (teks)                                 |
+| POST   | `/predict`  | Prediksi dari `{ipk, penghasilan, ikut_organisasi, ikut_ukm}` |
 
 Contoh:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/predict \
+curl -X POST http://127.0.0.1:8005/predict \
   -H "Content-Type: application/json" \
   -d '{"ipk":3.8,"penghasilan":"Rendah","ikut_organisasi":"Ikut","ikut_ukm":"Ikut"}'
 ```

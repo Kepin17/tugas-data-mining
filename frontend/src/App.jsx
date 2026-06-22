@@ -3,6 +3,7 @@ import { GraduationCap, Github, GitBranch, Sparkles, ArrowUpRight } from "lucide
 import Home from "./pages/Home.jsx";
 import Predict from "./pages/Predict.jsx";
 import Tree from "./pages/Tree.jsx";
+import DataSet from "./pages/DataSet.jsx";
 
 const GITHUB_URL = "https://github.com/Kepin17/tugas-data-mining";
 
@@ -29,6 +30,7 @@ export default function App() {
             <NavItem to="/">Beranda</NavItem>
             <NavItem to="/prediksi">Prediksi</NavItem>
             <NavItem to="/pohon">Pohon Keputusan</NavItem>
+            <NavItem to="/dataset">Dataset</NavItem>
           </nav>
         </div>
       </header>
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/prediksi" element={<Predict />} />
           <Route path="/pohon" element={<Tree />} />
+          <Route path="/dataset" element={<DataSet />} />
         </Routes>
       </main>
 
@@ -78,6 +81,11 @@ export default function App() {
                 <li>
                   <Link to="/pohon" className="text-slate-600 hover:text-indigo-600 transition-colors">
                     Pohon Keputusan
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/dataset" className="text-slate-600 hover:text-indigo-600 transition-colors">
+                    Dataset
                   </Link>
                 </li>
               </ul>

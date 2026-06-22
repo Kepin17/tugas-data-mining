@@ -162,15 +162,15 @@ _load_artifacts()
 
 
 class PredictRequest(BaseModel):
-    # --- 6 fitur yang dipakai model ---
+    # --- 5 fitur yang dipakai model ---
     ipk: float = Field(..., ge=0.0, le=4.0, description="IPK mahasiswa (0.0 - 4.0)")
     penghasilan: Literal["Rendah", "Sedang", "Tinggi"]
     ikut_organisasi: Literal["Ikut", "Tidak"]
     ikut_ukm: Literal["Ikut", "Tidak"]
     tanggungan: int = Field(..., ge=0, le=20, description="Jumlah tanggungan keluarga")
-    pekerjaan_orang_tua: str = Field(..., description="Pekerjaan orang tua (akan disederhanakan)")
 
-    # --- field identitas/administratif (disimpan, tidak dipakai model) ---
+    # --- field identitas/administratif (disimpan, TIDAK dipakai model) ---
+    pekerjaan_orang_tua: str | None = None
     nama_lengkap: str | None = None
     prodi: str | None = None
     jenis_kelamin: str | None = None
@@ -187,7 +187,6 @@ class PredictResponse(BaseModel):
     probabilitas_tidak_layak: float
     decision_path: list[int]
     leaf_id: int
-    pekerjaan_kategori: str
 
 
 # Kolom collected.csv: identitas + 6 fitur model (Pekerjaan sudah disederhanakan).
@@ -265,10 +264,8 @@ def tree_structure() -> dict:
 
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest) -> PredictResponse:
-    # Sederhanakan pekerjaan agar konsisten dengan kategori saat training.
-    pekerjaan_kategori = trainer.simplify_pekerjaan(req.pekerjaan_orang_tua)
-
-    # Susun input sesuai 6 fitur & nama kolom yang dipakai saat training.
+    # Susun input sesuai 5 fitur & nama kolom yang dipakai saat training.
+    # Pekerjaan Orang Tua TIDAK dipakai model (hanya disimpan sebagai data).
     row = pd.DataFrame(
         [
             {
@@ -277,7 +274,6 @@ def predict(req: PredictRequest) -> PredictResponse:
                 "Penghasilan": req.penghasilan,
                 "Ikut Organisasi": req.ikut_organisasi,
                 "Ikut UKM": req.ikut_ukm,
-                "Pekerjaan Orang Tua": pekerjaan_kategori,
             }
         ]
     )
@@ -289,6 +285,8 @@ def predict(req: PredictRequest) -> PredictResponse:
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Gagal memprediksi: {exc}") from exc
 
+    # Simpan pekerjaan (disederhanakan) sebagai data administratif.
+    pekerjaan_kategori = trainer.simplify_pekerjaan(req.pekerjaan_orang_tua)
     _record_submission(req, pekerjaan_kategori)
 
     return PredictResponse(
@@ -298,8 +296,38 @@ def predict(req: PredictRequest) -> PredictResponse:
         probabilitas_tidak_layak=round(float(proba[0]), 4),
         decision_path=path,
         leaf_id=path[-1] if path else 0,
-        pekerjaan_kategori=pekerjaan_kategori,
     )
+
+
+# Kolom yang ditampilkan pada halaman Dataset (urut & ringkas).
+DATASET_COLUMNS = [
+    "Nama Lengkap",
+    "Prodi",
+    "Jenis Kelamin",
+    "Asal Sekolah",
+    "Tahun Lulus",
+    "SKS",
+    "IPK",
+    "Penghasilan",
+    "Tanggungan",
+    "Pekerjaan Orang Tua",
+    "Ikut Organisasi",
+    "Ikut UKM",
+    "Status Beasiswa",
+]
+
+
+@app.get("/dataset")
+def dataset() -> dict:
+    """Kembalikan dataset (hasil pembersihan) untuk ditampilkan sebagai tabel."""
+    try:
+        df = trainer.load_and_clean()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Gagal memuat dataset: {exc}") from exc
+
+    cols = [c for c in DATASET_COLUMNS if c in df.columns]
+    rows = json.loads(df[cols].to_json(orient="records"))
+    return {"columns": cols, "rows": rows, "total": len(rows)}
 
 
 @app.post("/retrain")

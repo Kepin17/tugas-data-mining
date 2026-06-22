@@ -45,14 +45,15 @@ METADATA_PATH = MODEL_DIR / "metadata.json"
 TREE_TXT_PATH = MODEL_DIR / "tree_rules.txt"
 
 # ---------------------------------------------------------------------------
-# Fitur model (6 fitur: 4 inti + Tanggungan + Pekerjaan Orang Tua)
+# Fitur model (5 fitur: IPK, Tanggungan, Penghasilan, Ikut Organisasi, Ikut UKM)
+# Catatan: Pekerjaan Orang Tua TIDAK dipakai sebagai fitur model; hanya disimpan
+# sebagai data administratif (lihat backend) dan tetap dibersihkan untuk dataset.
 # ---------------------------------------------------------------------------
 NUMERIC_FEATURES = ["IPK", "Tanggungan"]
 CATEGORICAL_FEATURES = [
     "Penghasilan",
     "Ikut Organisasi",
     "Ikut UKM",
-    "Pekerjaan Orang Tua",
 ]
 FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 TARGET = "Status Beasiswa"
@@ -79,7 +80,6 @@ ALLOWED_VALUES = {
     "Penghasilan": ["Rendah", "Sedang", "Tinggi"],
     "Ikut Organisasi": ["Ikut", "Tidak"],
     "Ikut UKM": ["Ikut", "Tidak"],
-    "Pekerjaan Orang Tua": PEKERJAAN_CATEGORIES,
 }
 
 
@@ -118,31 +118,28 @@ def simplify_pekerjaan(value: object) -> str:
 # eksplisit (gabungan merit akademik + kebutuhan ekonomi + keaktifan).
 USE_RULE_BASED_LABEL = True
 
-# Ambang skor minimal agar dinyatakan Layak (skor maksimum = 9).
+# Ambang skor minimal agar dinyatakan Layak (skor maksimum = 8).
 RULE_THRESHOLD = 5
 
-# Proporsi label yang sengaja "dibalik" untuk menambah noise bila diperlukan.
-# Dengan 6 fitur, akurasi model secara natural sudah ~95% (tidak 100%, di bawah
-# 99%) karena IPK kontinu menciptakan generalization gap yang realistis,
-# sehingga noise tambahan tidak diperlukan.
-NOISE_RATE = 0.0
+# Proporsi label yang sengaja "dibalik" agar akurasi realistis (tidak 100%).
+# ~3% noise menahan akurasi test di kisaran ~90%.
+NOISE_RATE = 0.03
 
 RULE_DESCRIPTION = {
-    "deskripsi": "Layak jika total skor >= 5 (skor maksimum 9)",
+    "deskripsi": "Layak jika total skor >= 5 (skor maksimum 8)",
     "komponen": {
         "IPK": ">=3.5 -> +2; 3.0-3.49 -> +1; <3.0 -> 0",
         "Penghasilan": "Rendah -> +2; Sedang -> +1; Tinggi -> 0",
         "Ikut Organisasi": "Ikut -> +1; Tidak -> 0",
         "Ikut UKM": "Ikut -> +1; Tidak -> 0",
         "Tanggungan": ">=4 -> +2; 2-3 -> +1; <=1 -> 0",
-        "Pekerjaan Orang Tua": "kelompok ekonomi lemah -> +1; lainnya -> 0",
     },
     "threshold": RULE_THRESHOLD,
 }
 
 
 def kelayakan_score(row: pd.Series) -> int:
-    """Hitung skor kelayakan dari 6 fitur model."""
+    """Hitung skor kelayakan dari 5 fitur model."""
     score = 0
     ipk = float(row["IPK"])
     if ipk >= 3.5:
@@ -168,9 +165,6 @@ def kelayakan_score(row: pd.Series) -> int:
     if tanggungan >= 4:
         score += 2
     elif tanggungan >= 2:
-        score += 1
-
-    if str(row["Pekerjaan Orang Tua"]).strip() in PEKERJAAN_RENTAN:
         score += 1
 
     return score
@@ -285,7 +279,6 @@ def load_collected() -> pd.DataFrame:
         df["IPK"].astype(str).str.replace(",", ".", regex=False), errors="coerce"
     )
     df["Tanggungan"] = pd.to_numeric(df["Tanggungan"], errors="coerce")
-    df["Pekerjaan Orang Tua"] = df["Pekerjaan Orang Tua"].apply(simplify_pekerjaan)
     for col in ["Penghasilan", "Ikut Organisasi", "Ikut UKM"]:
         df[col] = df[col].astype(str).str.strip()
         df = df[df[col].isin(ALLOWED_VALUES[col])]

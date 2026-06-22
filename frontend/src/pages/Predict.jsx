@@ -76,12 +76,6 @@ function ResultCard({ result }) {
           <div className={`h-full ${layak ? "bg-emerald-500" : "bg-rose-500"}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
-
-      {result.pekerjaan_kategori && (
-        <p className="mt-4 text-xs text-slate-500">
-          Kategori pekerjaan (disederhanakan): <strong>{result.pekerjaan_kategori}</strong>
-        </p>
-      )}
     </div>
   );
 }
@@ -140,7 +134,7 @@ export default function Predict() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold">Form Prediksi Beasiswa</h1>
-      <p className="mt-2 text-slate-600">Isi data mahasiswa secara lengkap. Hanya 6 data (IPK, Penghasilan, Organisasi, UKM, Tanggungan, Pekerjaan Orang Tua) yang dipakai model.</p>
+      <p className="mt-2 text-slate-600">Isi data mahasiswa secara lengkap. Hanya 5 data (IPK, Penghasilan, Organisasi, UKM, Tanggungan) yang dipakai model.</p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
         {/* Bagian 1: Data Diri & Administratif */}
@@ -157,6 +151,7 @@ export default function Predict() {
             <TextField label="Asal Sekolah" value={form.asal_sekolah} onChange={(v) => update("asal_sekolah", v)} placeholder="cth: SMAN 1 ..." />
             <TextField label="Tahun Lulus" type="number" value={form.tahun_lulus} onChange={(v) => update("tahun_lulus", v)} min="2000" max="2030" />
             <TextField label="SKS" type="number" value={form.sks} onChange={(v) => update("sks", v)} min="0" max="200" />
+            <SelectField label="Pekerjaan Orang Tua" value={form.pekerjaan_orang_tua} onChange={(v) => update("pekerjaan_orang_tua", v)} options={PEKERJAAN} />
           </div>
         </section>
 
@@ -164,7 +159,7 @@ export default function Predict() {
         <section className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm space-y-5">
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-lg">Data Penilaian (Fitur Model)</h2>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600">6 fitur</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600">5 fitur</span>
           </div>
 
           <div>
@@ -190,10 +185,7 @@ export default function Predict() {
             <SegmentedField label="Ikut Organisasi" options={YA_TIDAK} value={form.ikut_organisasi} onChange={(v) => update("ikut_organisasi", v)} cols={2} />
             <SegmentedField label="Ikut UKM" options={YA_TIDAK} value={form.ikut_ukm} onChange={(v) => update("ikut_ukm", v)} cols={2} />
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <SelectField label="Jumlah Tanggungan" value={String(form.tanggungan)} onChange={(v) => update("tanggungan", v)} options={["1", "2", "3", "4", "5"]} />
-            <SelectField label="Pekerjaan Orang Tua" value={form.pekerjaan_orang_tua} onChange={(v) => update("pekerjaan_orang_tua", v)} options={PEKERJAAN} />
-          </div>
+          <SelectField label="Jumlah Tanggungan" value={String(form.tanggungan)} onChange={(v) => update("tanggungan", v)} options={["1", "2", "3", "4", "5"]} />
         </section>
 
         <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-colors">

@@ -35,6 +35,12 @@ export async function getTreeStructure() {
   return res.json();
 }
 
+export async function getDataset() {
+  const res = await fetch(`${BASE}/dataset`);
+  if (!res.ok) throw new Error("Gagal memuat dataset.");
+  return res.json();
+}
+
 export async function retrain() {
   const res = await fetch(`${BASE}/retrain`, { method: "POST" });
   if (!res.ok) {

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, NavLink, Route, Routes } from "react-router-dom";
-import { GraduationCap, Github, GitBranch, Sparkles, ArrowUpRight } from "lucide-react";
+import { GraduationCap, Github, GitBranch, Sparkles, ArrowUpRight, Menu, X } from "lucide-react";
 import Home from "./pages/Home.jsx";
 import Predict from "./pages/Predict.jsx";
 import Tree from "./pages/Tree.jsx";
@@ -7,32 +8,62 @@ import DataSet from "./pages/DataSet.jsx";
 
 const GITHUB_URL = "https://github.com/Kepin17/tugas-data-mining";
 
-function NavItem({ to, children }) {
+function NavItem({ to, children, onClick }) {
   return (
-    <NavLink to={to} className={({ isActive }) => `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+    <NavLink to={to} onClick={onClick} className={({ isActive }) => `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-indigo-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
       {children}
     </NavLink>
   );
 }
 
 export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-slate-800">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-bold text-lg">
+          <Link to="/" onClick={closeMenu} className="flex items-center gap-2 font-bold text-lg">
             <span className="grid place-items-center w-9 h-9 rounded-xl bg-indigo-600 text-white">
               <GraduationCap size={20} />
             </span>
             <span>BeasiswaAI</span>
           </Link>
-          <nav className="flex items-center gap-1">
+
+          {/* Nav desktop */}
+          <nav className="hidden md:flex items-center gap-1">
             <NavItem to="/">Beranda</NavItem>
             <NavItem to="/prediksi">Prediksi</NavItem>
             <NavItem to="/pohon">Pohon Keputusan</NavItem>
             <NavItem to="/dataset">Dataset</NavItem>
           </nav>
+
+          {/* Tombol hamburger (mobile) */}
+          <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label="Buka menu" aria-expanded={menuOpen} className="md:hidden grid place-items-center w-10 h-10 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors">
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+
+        {/* Menu dropdown (mobile) */}
+        {menuOpen && (
+          <nav className="md:hidden border-t border-slate-200 bg-white">
+            <div className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-1">
+              <NavItem to="/" onClick={closeMenu}>
+                Beranda
+              </NavItem>
+              <NavItem to="/prediksi" onClick={closeMenu}>
+                Prediksi
+              </NavItem>
+              <NavItem to="/pohon" onClick={closeMenu}>
+                Pohon Keputusan
+              </NavItem>
+              <NavItem to="/dataset" onClick={closeMenu}>
+                Dataset
+              </NavItem>
+            </div>
+          </nav>
+        )}
       </header>
 
       <main className="flex-1">

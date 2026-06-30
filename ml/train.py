@@ -121,12 +121,23 @@ USE_RULE_BASED_LABEL = True
 # Ambang skor minimal agar dinyatakan Layak (skor maksimum = 8).
 RULE_THRESHOLD = 5
 
+# IPK minimum (syarat mutlak). Mahasiswa dengan IPK di bawah nilai ini
+# langsung dinyatakan Tidak Layak, berapa pun skor dari faktor lain
+# (mis. ikut organisasi / UKM). IPK adalah prasyarat kelayakan akademik.
+MIN_IPK = 3.0
+
 # Proporsi label yang sengaja "dibalik" agar akurasi realistis (tidak 100%).
 # ~3% noise menahan akurasi test di kisaran ~90%.
 NOISE_RATE = 0.03
 
 RULE_DESCRIPTION = {
-    "deskripsi": "Layak jika total skor >= 5 (skor maksimum 8)",
+    "deskripsi": (
+        "Syarat mutlak IPK >= 3.0; jika IPK < 3.0 maka Tidak Layak. "
+        "Selama IPK memenuhi syarat, Layak jika total skor >= 5 (skor maksimum 8)"
+    ),
+    "syarat_mutlak": {
+        "IPK": f">= {MIN_IPK} (jika di bawah ini -> Tidak Layak, faktor lain diabaikan)",
+    },
     "komponen": {
         "IPK": ">=3.5 -> +2; 3.0-3.49 -> +1; <3.0 -> 0",
         "Penghasilan": "Rendah -> +2; Sedang -> +1; Tinggi -> 0",
@@ -135,6 +146,7 @@ RULE_DESCRIPTION = {
         "Tanggungan": ">=4 -> +2; 2-3 -> +1; <=1 -> 0",
     },
     "threshold": RULE_THRESHOLD,
+    "min_ipk": MIN_IPK,
 }
 
 
@@ -171,9 +183,15 @@ def kelayakan_score(row: pd.Series) -> int:
 
 
 def build_rule_based_label(df: pd.DataFrame) -> pd.Series:
-    """Kembalikan label biner (1=Layak) berdasarkan aturan skor."""
+    """Kembalikan label biner (1=Layak) berdasarkan aturan skor.
+
+    IPK adalah syarat mutlak: jika IPK < MIN_IPK, label dipaksa Tidak Layak
+    (0) berapa pun skor dari faktor lain seperti ikut organisasi/UKM.
+    """
     scores = df.apply(kelayakan_score, axis=1)
-    return (scores >= RULE_THRESHOLD).astype(int)
+    ipk = pd.to_numeric(df["IPK"], errors="coerce").fillna(0.0)
+    layak = (scores >= RULE_THRESHOLD) & (ipk >= MIN_IPK)
+    return layak.astype(int)
 
 
 def inject_label_noise(y: pd.Series, rate: float, random_state: int = 42) -> pd.Series:
